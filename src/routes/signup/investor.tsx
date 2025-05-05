@@ -1,91 +1,114 @@
-import React, { useState } from 'react'
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
-export default function InvestorSignup() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    bio: '',
-    investmentInterests: ''
-  })
+interface InvestorFormData {
+  name: string;
+  email: string;
+  phone: string;
+  bio: string;
+  investmentInterests: string;
+}
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+const schema = yup.object().shape({
+  name: yup.string().required('Name is required'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  phone: yup.string().required('Phone number is required'),
+  bio: yup.string().required('Bio is required'),
+  investmentInterests: yup.string().required('Investment interests are required'),
+});
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Investor form submitted:', formData)
-    // TODO: Add backend integration
-  }
+const InvestorSignup: React.FC = () => {
+  const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm<InvestorFormData>({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (data: InvestorFormData) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/investors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create investor profile');
+      }
+
+      toast.success('Profile created successfully!');
+      setTimeout(() => {
+        navigate('/dashboard/investor');
+      }, 2000);
+    } catch (error) {
+      toast.error('Failed to create profile');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Investor Sign Up
+          Create Investor Profile
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Join our platform to find and fund promising projects
-        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
+                Name
               </label>
               <div className="mt-1">
                 <input
                   id="name"
-                  name="name"
                   type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  {...register('name')}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
+                )}
               </div>
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Email
               </label>
               <div className="mt-1">
                 <input
                   id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  {...register('email')}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
+                )}
               </div>
             </div>
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
+                Phone
               </label>
               <div className="mt-1">
                 <input
                   id="phone"
-                  name="phone"
                   type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  {...register('phone')}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.phone && (
+                  <p className="mt-2 text-sm text-red-600">{errors.phone.message}</p>
+                )}
               </div>
             </div>
 
@@ -96,13 +119,13 @@ export default function InvestorSignup() {
               <div className="mt-1">
                 <textarea
                   id="bio"
-                  name="bio"
-                  rows={3}
-                  required
-                  value={formData.bio}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  rows={4}
+                  {...register('bio')}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
+                {errors.bio && (
+                  <p className="mt-2 text-sm text-red-600">{errors.bio.message}</p>
+                )}
               </div>
             </div>
 
@@ -113,28 +136,30 @@ export default function InvestorSignup() {
               <div className="mt-1">
                 <textarea
                   id="investmentInterests"
-                  name="investmentInterests"
-                  rows={3}
-                  required
-                  value={formData.investmentInterests}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Describe the types of projects you're interested in investing in"
+                  rows={4}
+                  {...register('investmentInterests')}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Describe your investment interests and preferences"
                 />
+                {errors.investmentInterests && (
+                  <p className="mt-2 text-sm text-red-600">{errors.investmentInterests.message}</p>
+                )}
               </div>
             </div>
 
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Sign up
+                Create Profile
               </button>
             </div>
           </form>
         </div>
       </div>
     </div>
-  )
-} 
+  );
+};
+
+export default InvestorSignup; 

@@ -13,17 +13,18 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, path.join(__dirname, 'uploads'));
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
 });
 
 const upload = multer({ storage });
@@ -34,7 +35,7 @@ let investors = [];
 let projects = [];
 
 // Developer routes
-app.post('/api/developers', upload.single('image'), (req, res) => {
+app.post('/api/developers', upload.single('logo'), (req, res) => {
   const { name, company, email, phone, website, bio, isSubscribed } = req.body;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -52,7 +53,7 @@ app.post('/api/developers', upload.single('image'), (req, res) => {
   };
 
   developers.push(developer);
-  res.json(developer);
+  res.json({ message: 'Developer created successfully' });
 });
 
 app.get('/api/developers', (req, res) => {
@@ -60,9 +61,9 @@ app.get('/api/developers', (req, res) => {
 });
 
 // Project routes
-app.post('/api/projects', upload.single('image'), (req, res) => {
+app.post('/api/projects', upload.array('images', 5), (req, res) => {
   const { title, description, location, type, developerId } = req.body;
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  const imageUrls = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
 
   const project = {
     id: Date.now().toString(),
@@ -70,13 +71,13 @@ app.post('/api/projects', upload.single('image'), (req, res) => {
     description,
     location,
     type,
-    imageUrl,
+    imageUrls,
     developerId,
     createdAt: new Date().toISOString(),
   };
 
   projects.push(project);
-  res.json(project);
+  res.json({ message: 'Project created successfully' });
 });
 
 app.get('/api/projects', (req, res) => {
@@ -105,11 +106,17 @@ app.post('/api/investors', (req, res) => {
   };
 
   investors.push(investor);
-  res.json(investor);
+  res.json({ message: 'Investor created successfully' });
 });
 
 app.get('/api/investors', (req, res) => {
   res.json(investors);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
 // Start server
